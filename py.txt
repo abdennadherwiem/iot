@@ -5,7 +5,7 @@ import random
 # ==========================
 # Configuration Ubidots
 # ==========================
-TOKEN = "BBFF-rNZfXEmO0jCfrAQjfnVUukrLsS35OP"  # Ton TOKEN Ubidots
+TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"  # Ton TOKEN Ubidots
 DEVICE_LABEL = "Raspberry"                      # Nom du device
 VARIABLE_LABEL_1 = "temperature"
 VARIABLE_LABEL_2 = "humidite"
