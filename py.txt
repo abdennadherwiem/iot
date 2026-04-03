@@ -1,0 +1,72 @@
+import time
+import requests
+import random
+
+# ==========================
+# Configuration Ubidots
+# ==========================
+TOKEN = "BBFF-rNZfXEmO0jCfrAQjfnVUukrLsS35OP"  # Ton TOKEN Ubidots
+DEVICE_LABEL = "Raspberry"                      # Nom du device
+VARIABLE_LABEL_1 = "temperature"
+VARIABLE_LABEL_2 = "humidite"
+VARIABLE_LABEL_3 = "position"
+
+# ==========================
+# Création du payload
+# ==========================
+def build_payload(var1, var2, var3):
+    value_1 = random.randint(30, 81)   # Température aléatoire
+    value_2 = random.randint(50, 71)   # Humidité aléatoire
+    # Coordonnées GPS
+    lat = 34.757358
+    lng = 10.772115
+    payload = {
+        var1: value_1,
+        var2: value_2,
+        var3: {"value": 34.10, "context": {"lat": lat, "lng": lng}}
+    }
+    return payload
+
+# ==========================
+# Envoi des données à Ubidots
+# ==========================
+def post_request(payload):
+    url = "http://industrial.api.ubidots.com/api/v1.6/devices/{}".format(DEVICE_LABEL)
+    headers = {"X-Auth-Token": TOKEN, "Content-Type": "application/json"}
+    
+    status = 400
+    attempts = 0
+    while status >= 400 and attempts < 5:
+        try:
+            req = requests.post(url=url, headers=headers, json=payload)
+            status = req.status_code
+            attempts += 1
+            time.sleep(1)
+        except Exception as e:
+            print("[ERROR] Exception:", e)
+            attempts += 1
+            time.sleep(1)
+    
+    if status >= 400:
+        print("[ERROR] Could not send data after 5 attempts. Check your token and connection.")
+        return False
+    
+    print("[INFO] Request made properly, your device is updated.")
+    return True
+
+# ==========================
+# Programme principal
+# ==========================
+def main():
+    payload = build_payload(VARIABLE_LABEL_1, VARIABLE_LABEL_2, VARIABLE_LABEL_3)
+    print("[INFO] Attempting to send data:", payload)
+    post_request(payload)
+    print("[INFO] Finished\n")
+
+# ==========================
+# Boucle infinie
+# ==========================
+if __name__ == "__main__":
+    while True:
+        main()
+        time.sleep(10)  # Envoie toutes les 10 secondes
