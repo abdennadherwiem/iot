@@ -18,7 +18,7 @@ VARIABLE_LABEL_3 = "position"
 last_temp = None
 last_hum = None
 
-# Seuil de changement minimum (optionnel)
+# Seuil de changement
 SEUIL_TEMP = 2
 SEUIL_HUM = 2
 
@@ -47,7 +47,8 @@ def build_payload(var1, var2, var3):
 # Envoi des données
 # ==========================
 def post_request(payload):
-    url = "http://industrial.api.ubidots.com/api/v1.6/devices/{}".format(DEVICE_LABEL)
+    url = "https://industrial.api.ubidots.com/api/v1.6/devices/{}".format(DEVICE_LABEL)
+
     headers = {
         "X-Auth-Token": TOKEN,
         "Content-Type": "application/json"
@@ -88,7 +89,7 @@ def main():
 
     print(f"[INFO] New values → Temp: {temp}, Hum: {hum}")
 
-    # Première exécution → envoyer directement
+    # Premier envoi
     if last_temp is None or last_hum is None:
         print("[INFO] First send")
         if post_request(payload):
@@ -96,17 +97,26 @@ def main():
             last_hum = hum
         return
 
-    # Vérifier changement avec seuil
+    # Détection changement avec seuil
     temp_changed = abs(temp - last_temp) >= SEUIL_TEMP
     hum_changed = abs(hum - last_hum) >= SEUIL_HUM
 
+    # Décision d'envoi
     if temp_changed or hum_changed:
-        print("[INFO] Significant change detected → Sending data...")
+
+        if temp_changed and hum_changed:
+            print("[INFO] Temp + Hum changed → Sending data...")
+        elif temp_changed:
+            print("[INFO] Temp changed → Sending data...")
+        else:
+            print("[INFO] Hum changed → Sending data...")
+
         if post_request(payload):
             last_temp = temp
             last_hum = hum
+
     else:
-        print("[INFO] No significant change → Not sending")
+        print("[INFO] No change (Temp & Hum same) → Not sending")
 
     print("[INFO] Finished\n")
 
