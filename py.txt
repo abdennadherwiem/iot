@@ -13,12 +13,11 @@ VARIABLE_LABEL_2 = "humidite"
 VARIABLE_LABEL_3 = "position"
 
 # ==========================
-# Variables globales (mémoire)
+# Variables globales
 # ==========================
 last_temp = None
 last_hum = None
 
-# Seuil de changement
 SEUIL_TEMP = 2
 SEUIL_HUM = 2
 
@@ -26,8 +25,8 @@ SEUIL_HUM = 2
 # Création du payload
 # ==========================
 def build_payload(var1, var2, var3):
-    value_1 = random.randint(30, 81)   # Température
-    value_2 = random.randint(50, 71)   # Humidité
+    value_1 = random.randint(30, 81)
+    value_2 = random.randint(50, 71)
 
     lat = 34.757358
     lng = 10.772115
@@ -47,33 +46,24 @@ def build_payload(var1, var2, var3):
 # Envoi des données
 # ==========================
 def post_request(payload):
-    url = "https://industrial.api.ubidots.com/api/v1.6/devices/{}".format(DEVICE_LABEL)
+    url = f"https://industrial.api.ubidots.com/api/v1.6/devices/{DEVICE_LABEL}"
 
     headers = {
         "X-Auth-Token": TOKEN,
         "Content-Type": "application/json"
     }
 
-    status = 400
-    attempts = 0
-
-    while status >= 400 and attempts < 5:
-        try:
-            req = requests.post(url=url, headers=headers, json=payload)
-            status = req.status_code
-            attempts += 1
-            time.sleep(1)
-        except Exception as e:
-            print("[ERROR] Exception:", e)
-            attempts += 1
-            time.sleep(1)
-
-    if status >= 400:
-        print("[ERROR] Failed after 5 attempts")
+    try:
+        response = requests.post(url=url, headers=headers, json=payload)
+        if response.status_code < 400:
+            print("[INFO] Data sent successfully")
+            return True
+        else:
+            print("[ERROR] Failed with status:", response.status_code)
+            return False
+    except Exception as e:
+        print("[ERROR] Exception:", e)
         return False
-
-    print("[INFO] Data sent successfully")
-    return True
 
 # ==========================
 # Logique principale
@@ -97,26 +87,28 @@ def main():
             last_hum = hum
         return
 
-    # Détection changement avec seuil
+    # Vérifier changement avec seuil
     temp_changed = abs(temp - last_temp) >= SEUIL_TEMP
     hum_changed = abs(hum - last_hum) >= SEUIL_HUM
 
-    # Décision d'envoi
-    if temp_changed or hum_changed:
+    # CAS 1 : AUCUN changement
+    if not temp_changed and not hum_changed:
+        print("[INFO] NOT sending (Temp & Hum identical)")
+        print("[INFO] Finished\n")
+        return
 
-        if temp_changed and hum_changed:
-            print("[INFO] Temp + Hum changed → Sending data...")
-        elif temp_changed:
-            print("[INFO] Temp changed → Sending data...")
-        else:
-            print("[INFO] Hum changed → Sending data...")
-
-        if post_request(payload):
-            last_temp = temp
-            last_hum = hum
-
+    # CAS 2 : Il y a un changement
+    if temp_changed and hum_changed:
+        print("[INFO] Temp + Hum changed → Sending...")
+    elif temp_changed:
+        print("[INFO] Temp changed → Sending...")
     else:
-        print("[INFO] No change (Temp & Hum same) → Not sending")
+        print("[INFO] Hum changed → Sending...")
+
+    # Envoi
+    if post_request(payload):
+        last_temp = temp
+        last_hum = hum
 
     print("[INFO] Finished\n")
 
@@ -126,4 +118,4 @@ def main():
 if __name__ == "__main__":
     while True:
         main()
-        time.sleep(10)  # toutes les 10 secondes
+        time.sleep(10)
