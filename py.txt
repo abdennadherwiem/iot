@@ -18,9 +18,6 @@ VARIABLE_LABEL_3 = "position"
 last_temp = None
 last_hum = None
 
-SEUIL_TEMP = 2
-SEUIL_HUM = 2
-
 # ==========================
 # Création du payload
 # ==========================
@@ -59,14 +56,14 @@ def post_request(payload):
             print("[INFO] Data sent successfully")
             return True
         else:
-            print("[ERROR] Failed with status:", response.status_code)
+            print("[ERROR] Failed:", response.status_code)
             return False
     except Exception as e:
         print("[ERROR] Exception:", e)
         return False
 
 # ==========================
-# Logique principale
+# Logique principale SIMPLE
 # ==========================
 def main():
     global last_temp, last_hum
@@ -77,7 +74,7 @@ def main():
         VARIABLE_LABEL_3
     )
 
-    print(f"[INFO] New values → Temp: {temp}, Hum: {hum}")
+    print(f"[INFO] Temp: {temp} | Hum: {hum}")
 
     # Premier envoi
     if last_temp is None or last_hum is None:
@@ -87,20 +84,16 @@ def main():
             last_hum = hum
         return
 
-    # Vérifier changement avec seuil
-    temp_changed = abs(temp - last_temp) >= SEUIL_TEMP
-    hum_changed = abs(hum - last_hum) >= SEUIL_HUM
-
-    # CAS 1 : AUCUN changement
-    if not temp_changed and not hum_changed:
-        print("[INFO] NOT sending (Temp & Hum identical)")
-        print("[INFO] Finished\n")
+    # 🔥 LOGIQUE SIMPLE
+    if temp == last_temp and hum == last_hum:
+        print("[INFO] SAME values → NOT sending")
+        print()
         return
 
-    # CAS 2 : Il y a un changement
-    if temp_changed and hum_changed:
+    # Sinon → il y a un changement
+    if temp != last_temp and hum != last_hum:
         print("[INFO] Temp + Hum changed → Sending...")
-    elif temp_changed:
+    elif temp != last_temp:
         print("[INFO] Temp changed → Sending...")
     else:
         print("[INFO] Hum changed → Sending...")
@@ -110,7 +103,7 @@ def main():
         last_temp = temp
         last_hum = hum
 
-    print("[INFO] Finished\n")
+    print()
 
 # ==========================
 # Boucle infinie
