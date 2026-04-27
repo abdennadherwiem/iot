@@ -36,3 +36,63 @@ client.subscribe(TOPIC)
 print("En attente du switch...")
 
 client.loop_forever()
+
+//////////////////
+import paho.mqtt.client as mqtt
+import json
+import os
+import time
+
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+DEVICE = "esp32_Device"
+
+BROKER = "industrial.api.ubidots.com"
+PORT = 1883
+
+TOPIC = f"/v1.6/devices/{DEVICE}/switch/lv"
+
+GPIO_PIN = 3
+
+# GPIO setup (sysfs)
+def gpio(pin, value):
+    try:
+        if not os.path.exists(f"/sys/class/gpio/gpio{pin}"):
+            os.system(f"echo {pin} > /sys/class/gpio/export")
+            time.sleep(0.2)
+
+        os.system(f"echo out > /sys/class/gpio/gpio{pin}/direction")
+        os.system(f"echo {value} > /sys/class/gpio/gpio{pin}/value")
+
+    except Exception as e:
+        print("GPIO error:", e)
+
+def on_message(client, userdata, msg):
+
+    value = msg.payload.decode().strip()
+
+    print("Etat switch :", value)
+
+    if value == "1":
+        print("🟢 Ventilateur ON")
+        gpio(GPIO_PIN, 1)
+
+    else:
+        print("🔴 Ventilateur OFF")
+        gpio(GPIO_PIN, 0)
+
+def on_connect(client, userdata, flags, rc):
+    print("Connecté :", rc)
+    client.subscribe(TOPIC)
+
+client = mqtt.Client()
+
+client.username_pw_set(UBIDOTS_TOKEN, "")
+
+client.on_connect = on_connect
+client.on_message = on_message
+
+print("En attente du switch...")
+
+client.connect(BROKER, PORT, 60)
+
+client.loop_forever()
