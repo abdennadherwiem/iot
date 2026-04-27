@@ -91,3 +91,42 @@ client.subscribe(TOPIC)
 print("En attente du switch...")
 
 client.loop_forever()
+
+
+//////////////////
+
+import paho.mqtt.publish as publish
+import time
+
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+
+TOPIC = "/v1.6/devices/esp32_Device"
+
+while True:
+
+    # ON
+    publish.single(
+        TOPIC,
+        '{"switch": 1}',
+        hostname=MQTT_BROKER,
+        port=MQTT_PORT,
+        auth={'username': UBIDOTS_TOKEN, 'password': ""}
+    )
+
+    print("Switch ON envoyé")
+    time.sleep(5)
+
+    # OFF
+    publish.single(
+        TOPIC,
+        '{"switch": 0}',
+        hostname=MQTT_BROKER,
+        port=MQTT_PORT,
+        auth={'username': UBIDOTS_TOKEN, 'password': ""}
+    )
+
+    print("Switch OFF envoyé")
+    time.sleep(5)
