@@ -1,0 +1,66 @@
+import paho.mqtt.publish as publish
+
+# Token Ubidots
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+# Configuration MQTT
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+MQTT_USERNAME = UBIDOTS_TOKEN
+MQTT_PASSWORD = ""
+
+# Topic et message
+TOPIC = "/v1.6/devices/raspberry"
+MESSAGE = '{"temperature": 19}'
+
+# Envoi du message
+publish.single(
+    TOPIC,
+    MESSAGE,
+    hostname=MQTT_BROKER,
+    port=MQTT_PORT,
+    auth={'username': MQTT_USERNAME, 'password': MQTT_PASSWORD}
+)
+
+print("Message envoyé !")
+
+
+
+///RECEIVE
+import paho.mqtt.client as mqtt
+
+# Token Ubidots
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+# Configuration MQTT
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+MQTT_USERNAME = UBIDOTS_TOKEN
+MQTT_PASSWORD = ""
+
+# Topic à écouter
+TOPIC = "/v1.6/devices/raspberry/temperature/lv"
+
+# Fonction appelée quand un message arrive
+def on_message(client, userdata, msg):
+    print(f"Message reçu sur {msg.topic} : {msg.payload.decode()}")
+
+# Création du client
+client = mqtt.Client()
+
+# Authentification
+client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+
+# Connexion au broker
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+
+# Associer la fonction
+client.on_message = on_message
+
+# S'abonner au topic
+client.subscribe(TOPIC)
+
+print("En attente de messages...")
+
+# Boucle infinie
+client.loop_forever()
