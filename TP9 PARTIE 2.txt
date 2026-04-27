@@ -252,3 +252,119 @@ client.connect(MQTT_BROKER, MQTT_PORT, 60)
 print("En attente du switch...")
 
 client.loop_forever()
+
+
+///////////////////
+import paho.mqtt.client as mqtt
+
+import time
+
+import sys
+
+# ====================== CONFIGURATION ======================
+
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"          # ← Remplace par ton vrai token Ubidots
+
+DEVICE_LABEL = "esp32_Device"            # Doit être IDENTIQUE à celui dans Ubidots
+
+VARIABLE_LABEL = "switch"                # Nom de la variable Raw (Switch)
+
+MQTT_BROKER = "industrial.api.ubidots.com"
+
+MQTT_PORT = 1883
+
+# Topic pour recevoir la dernière valeur du switch
+
+TOPIC = f"/v1.6/devices/{DEVICE_LABEL}/{VARIABLE_LABEL}/lv"
+
+# ====================== CALLBACKS MQTT ======================
+
+def on_connect(client, userdata, flags, rc, properties=None):
+
+    if rc == 0:
+
+        print("✅ Connexion réussie au broker MQTT Ubidots")
+
+        client.subscribe(TOPIC, qos=1)
+
+        print(f"📡 Abonné au topic : {TOPIC}")
+
+        print("🔄 En attente des commandes du bouton Switch sur le Dashboard...\n")
+
+        print("🟡 Système prêt - Vous pouvez maintenant actionner le Switch dans Ubidots\n")
+
+    else:
+
+        print(f"❌ Échec de connexion, code : {rc}")
+
+def on_message(client, userdata, msg):
+
+    try:
+
+        value = msg.payload.decode().strip()
+
+        print(f"📥 Valeur reçue : {value}")
+
+        if value in ["1", "1.0", "true", "True"]:
+
+            print("🟢 VENTILATEUR → ON")
+
+            print("   → Le ventilateur est maintenant allumé\n")
+
+        elif value in ["0", "0.0", "false", "False"]:
+
+            print("🔴 VENTILATEUR → OFF")
+
+            print("   → Le ventilateur est maintenant éteint\n")
+
+        else:
+
+            print(f"⚠️ Valeur inconnue reçue : {value}\n")
+
+            
+
+    except Exception as e:
+
+        print(f"❌ Erreur lors du traitement du message : {e}\n")
+
+def on_disconnect(client, userdata, rc, properties=None):
+
+    print("⚠️ Déconnecté du broker. Tentative de reconnexion...")
+
+# ====================== CONFIGURATION CLIENT ======================
+
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+client.username_pw_set(UBIDOTS_TOKEN, "")
+
+client.on_connect = on_connect
+
+client.on_message = on_message
+
+client.on_disconnect = on_disconnect
+
+# ====================== LANCEMENT ======================
+
+print("🚀 Démarrage du système de télécommande ventilateur (Raspberry Pi)")
+
+print("   Version sans contrôle GPIO - Simulation uniquement\n")
+
+try:
+
+    client.connect(MQTT_BROKER, MQTT_PORT, 60)
+
+    print("🔗 Tentative de connexion au broker Ubidots...\n")
+
+    client.loop_forever()
+
+except KeyboardInterrupt:
+
+    print("\n⛔ Programme arrêté par l'utilisateur (Ctrl+C)")
+
+except Exception as e:
+
+    print(f"❌ Erreur de connexion : {e}")
+
+finally:
+
+    print("🛑 Programme terminé.")
