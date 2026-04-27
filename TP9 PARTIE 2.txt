@@ -208,3 +208,47 @@ client.connect(MQTT_BROKER, MQTT_PORT, 60)
 print("En attente du switch...")
 
 client.loop_forever()
+////////////////////
+import paho.mqtt.client as mqtt
+
+# 🔑 Ubidots token
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+# 🌐 MQTT config
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+
+# 📡 Topic switch
+TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
+
+# 📩 message reçu
+def on_message(client, userdata, msg):
+
+    value = msg.payload.decode()
+
+    print("Etat switch reçu :", value)
+
+    if value == "1":
+        print("🟢 Ventilateur ON (SIMULATION)")
+
+    elif value == "0":
+        print("🔴 Ventilateur OFF (SIMULATION)")
+
+# 🔗 connexion OK callback
+def on_connect(client, userdata, flags, rc):
+    print("Connecté au broker avec code :", rc)
+    client.subscribe(TOPIC)
+
+# 🔗 client MQTT
+client = mqtt.Client()
+
+client.username_pw_set(UBIDOTS_TOKEN, "")
+
+client.on_connect = on_connect
+client.on_message = on_message
+
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+
+print("En attente du switch...")
+
+client.loop_forever()
