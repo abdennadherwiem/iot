@@ -1,0 +1,41 @@
+import time
+import random
+import paho.mqtt.publish as publish
+
+# 🔑 Token Ubidots (important)
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+# 🌐 MQTT broker Ubidots
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+
+# 📦 Device
+DEVICE = "esp32_Device"
+TOPIC = f"/v1.6/devices/{DEVICE}"
+
+# 🔁 boucle infinie
+while True:
+
+    # 🌡️ Simulation capteur DHT22
+    temperature = round(random.uniform(35, 45), 2)
+    humidity = round(random.uniform(50, 80), 2)
+
+    # 📦 JSON envoyé
+    payload = (
+        '{"temperature": ' + str(temperature) +
+        ', "humidity": ' + str(humidity) + '}'
+    )
+
+    # 🚀 envoi MQTT
+    publish.single(
+        TOPIC,
+        payload,
+        hostname=MQTT_BROKER,
+        port=MQTT_PORT,
+        auth={'username': UBIDOTS_TOKEN, 'password': ""}
+    )
+
+    print("Envoyé :", payload)
+
+    # ⏱️ pause 5 secondes
+    time.sleep(5)
