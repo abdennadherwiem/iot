@@ -368,3 +368,161 @@ except Exception as e:
 finally:
 
     print("🛑 Programme terminé.")
+
+
+
+
+
+
+::////////////
+import paho.mqtt.client as mqtt
+
+import json
+
+import time
+
+import os
+
+# ── Paramètres Ubidots ────────────────────────────────────────────────
+
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+DEVICE_LABEL  = "esp32_Device"
+
+MQTT_BROKER   = "industrial.api.ubidots.com"
+
+MQTT_PORT     = 1883
+
+TOPIC_SUB     = f"/v1.6/devices/{DEVICE_LABEL}/switch/lv"
+
+# ── GPIO via sysfs (pas de bibliothèque RPi.GPIO) ─────────────────────
+
+GPIO_PIN = 3   # BCM GPIO 3
+
+GPIO_PATH = f"/sys/class/gpio/gpio{GPIO_PIN}"
+
+def gpio_export(pin):
+
+    """Active le pin dans le système de fichiers sysfs."""
+
+    if not os.path.exists(f"/sys/class/gpio/gpio{pin}"):
+
+        with open("/sys/class/gpio/export", "w") as f:
+
+            f.write(str(pin))
+
+        time.sleep(0.1)  # Attente nécessaire après export
+
+def gpio_set_direction(pin, direction="out"):
+
+    """Définit la direction du pin : 'out' ou 'in'."""
+
+    with open(f"/sys/class/gpio/gpio{pin}/direction", "w") as f:
+
+        f.write(direction)
+
+def gpio_write(pin, value):
+
+    """Écrit 0 (LOW) ou 1 (HIGH) sur le pin."""
+
+    with open(f"/sys/class/gpio/gpio{pin}/value", "w") as f:
+
+        f.write(str(value))
+
+def gpio_unexport(pin):
+
+    """Libère le pin à la fin du programme."""
+
+    with open("/sys/class/gpio/unexport", "w") as f:
+
+        f.write(str(pin))
+
+# ── Initialisation du GPIO ────────────────────────────────────────────
+
+gpio_export(GPIO_PIN)
+
+gpio_set_direction(GPIO_PIN, "out")
+
+gpio_write(GPIO_PIN, 0)   # Ventilateur éteint au démarrage
+
+print(f"[GPIO] Pin {GPIO_PIN} initialisé en sortie (via sysfs)")
+
+# ── Callback MQTT : à chaque message reçu ────────────────────────────
+
+def on_message(client, userdata, message):
+
+    payload_str = message.payload.decode("utf-8")
+
+    print(f"[MQTT] Topic  : {message.topic}")
+
+    print(f"[MQTT] Payload: {payload_str}")
+
+    try:
+
+        # Ubidots renvoie un JSON : {"value": 1.0, "timestamp": ...}
+
+        data  = json.loads(payload_str)
+
+        value = int(data.get("value", 0))
+
+    except (json.JSONDecodeError, ValueError):
+
+        # Parfois la valeur brute est juste "1" ou "0"
+
+        value = int(float(payload_str.strip()))
+
+    if value == 1:
+
+        gpio_write(GPIO_PIN, 1)
+
+        print(">>> Ventilateur : ALLUMÉ (ON)  — GPIO 3 = HIGH ✓")
+
+    else:
+
+        gpio_write(GPIO_PIN, 0)
+
+        print(">>> Ventilateur : ÉTEINT (OFF) — GPIO 3 = LOW  ✓")
+
+def on_connect(client, userdata, flags, rc):
+
+    if rc == 0:
+
+        print(f"[MQTT] Connecté au broker Ubidots")
+
+        client.subscribe(TOPIC_SUB)
+
+        print(f"[MQTT] Abonné au topic : {TOPIC_SUB}")
+
+    else:
+
+        print(f"[MQTT] Échec de connexion, code : {rc}")
+
+# ── Configuration et démarrage du client MQTT ─────────────────────────
+
+client = mqtt.Client(client_id="RaspberryPi_IoT")
+
+client.username_pw_set(UBIDOTS_TOKEN, password="")   # Token = username
+
+client.on_connect = on_connect
+
+client.on_message = on_message
+
+print(f"[MQTT] Connexion à {MQTT_BROKER}:{MQTT_PORT} ...")
+
+client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
+
+try:
+
+    client.loop_forever()   # Bloque et traite les messages indéfiniment
+
+except KeyboardInterrupt:
+
+    print("\n[ARRÊT] Interruption clavier — libération des ressources")
+
+    gpio_write(GPIO_PIN, 0)    # Éteindre le ventilateur
+
+    gpio_unexport(GPIO_PIN)    # Libérer le pin
+
+    client.disconnect()
+
+    print("[GPIO] Pin libéré. Programme terminé.")
