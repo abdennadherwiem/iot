@@ -130,3 +130,35 @@ while True:
 
     print("Switch OFF envoyé")
     time.sleep(5)
+
+////////////////
+import paho.mqtt.client as mqtt
+
+UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+
+MQTT_BROKER = "industrial.api.ubidots.com"
+MQTT_PORT = 1883
+
+TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
+
+def on_message(client, userdata, msg):
+
+    value = msg.payload.decode()
+
+    print("Etat switch reçu :", value)
+
+    if value == "1":
+        print("🟢 Ventilateur ON (SIMULATION)")
+
+    elif value == "0":
+        print("🔴 Ventilateur OFF (SIMULATION)")
+
+client = mqtt.Client()
+client.username_pw_set(UBIDOTS_TOKEN, "")
+client.on_message = on_message
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.subscribe(TOPIC)
+
+print("En attente du switch...")
+
+client.loop_forever()
