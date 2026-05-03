@@ -40,489 +40,53 @@ while True:
     # ⏱️ pause 5 secondes
     time.sleep(5)
 
-
-
-
-//////////////////PARTIE 2 CODE //////////
+////////////////////////////////////////CECI
 import paho.mqtt.client as mqtt
-import RPi.GPIO as GPIO
+from gpiozero import LED
+import time
 
-# 🔑 Ubidots token
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
+# ================= RELAY =================
+try:
+    relay = LED(3)   # GPIO 3 (ton TP)
+    gpio_ok = True
+except:
+    print("GPIO non disponible → mode simulation")
+    gpio_ok = False
 
-# 🌐 MQTT config
-MQTT_BROKER = "industrial.api.ubidots.com"
-MQTT_PORT = 1883
+# ================= UBIDOTS =================
+TOKEN = "BBUS-XkSeMSvu2DhZNLzmm1Xnoq5w8k0DBS"
+DEVICE_LABEL = "esp32_Device"
 
-TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
+BROKER = "industrial.api.ubidots.com"
+PORT = 1883
 
-# 🔌 GPIO setup (Raspberry Pi GPIO 3)
-RELAY_PIN = 3
+TOPIC = f"/v1.6/devices/{DEVICE_LABEL}/switch/lv"
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
-
-# 📩 callback message reçu
+# ================= CALLBACK =================
 def on_message(client, userdata, msg):
+    value = msg.payload.decode("utf-8")
+    print("Valeur reçue :", value)
 
-    value = msg.payload.decode()
-
-    print("Etat switch reçu :", value)
-
-    if value == "1":
-        print("🟢 Ventilateur ON")
-        GPIO.output(RELAY_PIN, GPIO.HIGH)
-
-    elif value == "0":
+    # ================= LOGIQUE SWITCH =================
+    if value == "1.0":
+        print("🔵 Ventilateur ON")
+        if gpio_ok:
+            relay.on()
+    else:
         print("🔴 Ventilateur OFF")
-        GPIO.output(RELAY_PIN, GPIO.LOW)
+        if gpio_ok:
+            relay.off()
 
-# 🔗 client MQTT
+# ================= MQTT SETUP =================
 client = mqtt.Client()
-
-client.username_pw_set(UBIDOTS_TOKEN, "")
+client.username_pw_set(TOKEN, "")
 
 client.on_message = on_message
-
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.connect(BROKER, PORT, 60)
 
 client.subscribe(TOPIC)
 
-print("En attente du switch...")
+print("⏳ En attente des commandes Switch...")
 
 client.loop_forever()
 
-
-//////////////////
-
-import paho.mqtt.publish as publish
-import time
-
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
-
-MQTT_BROKER = "industrial.api.ubidots.com"
-MQTT_PORT = 1883
-
-TOPIC = "/v1.6/devices/esp32_Device"
-
-while True:
-
-    # ON
-    publish.single(
-        TOPIC,
-        '{"switch": 1}',
-        hostname=MQTT_BROKER,
-        port=MQTT_PORT,
-        auth={'username': UBIDOTS_TOKEN, 'password': ""}
-    )
-
-    print("Switch ON envoyé")
-    time.sleep(5)
-
-    # OFF
-    publish.single(
-        TOPIC,
-        '{"switch": 0}',
-        hostname=MQTT_BROKER,
-        port=MQTT_PORT,
-        auth={'username': UBIDOTS_TOKEN, 'password': ""}
-    )
-
-    print("Switch OFF envoyé")
-    time.sleep(5)
-
-////////////////
-import paho.mqtt.client as mqtt
-
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
-
-MQTT_BROKER = "industrial.api.ubidots.com"
-MQTT_PORT = 1883
-
-TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
-
-def on_message(client, userdata, msg):
-
-    value = msg.payload.decode()
-
-    print("Etat switch reçu :", value)
-
-    if value == "1":
-        print("🟢 Ventilateur ON (SIMULATION)")
-
-    elif value == "0":
-        print("🔴 Ventilateur OFF (SIMULATION)")
-
-client = mqtt.Client()
-client.username_pw_set(UBIDOTS_TOKEN, "")
-client.on_message = on_message
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
-client.subscribe(TOPIC)
-
-print("En attente du switch...")
-
-client.loop_forever()
-
-
-////////
-import paho.mqtt.client as mqtt
-
-# 🔑 Ubidots token
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
-
-# 🌐 MQTT config
-MQTT_BROKER = "industrial.api.ubidots.com"
-MQTT_PORT = 1883
-
-# 📡 Topic switch
-TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
-
-# 📩 message reçu
-def on_message(client, userdata, msg):
-
-    value = msg.payload.decode()
-
-    print("Etat switch reçu :", value)
-
-    if value == "1":
-        print("🟢 Ventilateur ON (SIMULATION)")
-
-    elif value == "0":
-        print("🔴 Ventilateur OFF (SIMULATION)")
-
-# 🔗 connexion OK callback
-def on_connect(client, userdata, flags, rc):
-    print("Connecté au broker avec code :", rc)
-    client.subscribe(TOPIC)
-
-# 🔗 client MQTT
-client = mqtt.Client()
-
-client.username_pw_set(UBIDOTS_TOKEN, "")
-
-client.on_connect = on_connect
-client.on_message = on_message
-
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
-
-print("En attente du switch...")
-
-client.loop_forever()
-////////////////////
-import paho.mqtt.client as mqtt
-
-# 🔑 Ubidots token
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
-
-# 🌐 MQTT config
-MQTT_BROKER = "industrial.api.ubidots.com"
-MQTT_PORT = 1883
-
-# 📡 Topic switch
-TOPIC = "/v1.6/devices/esp32_Device/switch/lv"
-
-# 📩 message reçu
-def on_message(client, userdata, msg):
-
-    value = msg.payload.decode()
-
-    print("Etat switch reçu :", value)
-
-    if value == "1":
-        print("🟢 Ventilateur ON (SIMULATION)")
-
-    elif value == "0":
-        print("🔴 Ventilateur OFF (SIMULATION)")
-
-# 🔗 connexion OK callback
-def on_connect(client, userdata, flags, rc):
-    print("Connecté au broker avec code :", rc)
-    client.subscribe(TOPIC)
-
-# 🔗 client MQTT
-client = mqtt.Client()
-
-client.username_pw_set(UBIDOTS_TOKEN, "")
-
-client.on_connect = on_connect
-client.on_message = on_message
-
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
-
-print("En attente du switch...")
-
-client.loop_forever()
-
-
-///////////////////
-import paho.mqtt.client as mqtt
-
-import time
-
-import sys
-
-# ====================== CONFIGURATION ======================
-
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"          # ← Remplace par ton vrai token Ubidots
-
-DEVICE_LABEL = "esp32_Device"            # Doit être IDENTIQUE à celui dans Ubidots
-
-VARIABLE_LABEL = "switch"                # Nom de la variable Raw (Switch)
-
-MQTT_BROKER = "industrial.api.ubidots.com"
-
-MQTT_PORT = 1883
-
-# Topic pour recevoir la dernière valeur du switch
-
-TOPIC = f"/v1.6/devices/{DEVICE_LABEL}/{VARIABLE_LABEL}/lv"
-
-# ====================== CALLBACKS MQTT ======================
-
-def on_connect(client, userdata, flags, rc, properties=None):
-
-    if rc == 0:
-
-        print("✅ Connexion réussie au broker MQTT Ubidots")
-
-        client.subscribe(TOPIC, qos=1)
-
-        print(f"📡 Abonné au topic : {TOPIC}")
-
-        print("🔄 En attente des commandes du bouton Switch sur le Dashboard...\n")
-
-        print("🟡 Système prêt - Vous pouvez maintenant actionner le Switch dans Ubidots\n")
-
-    else:
-
-        print(f"❌ Échec de connexion, code : {rc}")
-
-def on_message(client, userdata, msg):
-
-    try:
-
-        value = msg.payload.decode().strip()
-
-        print(f"📥 Valeur reçue : {value}")
-
-        if value in ["1", "1.0", "true", "True"]:
-
-            print("🟢 VENTILATEUR → ON")
-
-            print("   → Le ventilateur est maintenant allumé\n")
-
-        elif value in ["0", "0.0", "false", "False"]:
-
-            print("🔴 VENTILATEUR → OFF")
-
-            print("   → Le ventilateur est maintenant éteint\n")
-
-        else:
-
-            print(f"⚠️ Valeur inconnue reçue : {value}\n")
-
-            
-
-    except Exception as e:
-
-        print(f"❌ Erreur lors du traitement du message : {e}\n")
-
-def on_disconnect(client, userdata, rc, properties=None):
-
-    print("⚠️ Déconnecté du broker. Tentative de reconnexion...")
-
-# ====================== CONFIGURATION CLIENT ======================
-
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-
-client.username_pw_set(UBIDOTS_TOKEN, "")
-
-client.on_connect = on_connect
-
-client.on_message = on_message
-
-client.on_disconnect = on_disconnect
-
-# ====================== LANCEMENT ======================
-
-print("🚀 Démarrage du système de télécommande ventilateur (Raspberry Pi)")
-
-print("   Version sans contrôle GPIO - Simulation uniquement\n")
-
-try:
-
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-
-    print("🔗 Tentative de connexion au broker Ubidots...\n")
-
-    client.loop_forever()
-
-except KeyboardInterrupt:
-
-    print("\n⛔ Programme arrêté par l'utilisateur (Ctrl+C)")
-
-except Exception as e:
-
-    print(f"❌ Erreur de connexion : {e}")
-
-finally:
-
-    print("🛑 Programme terminé.")
-
-
-
-
-
-
-::////////////
-import paho.mqtt.client as mqtt
-
-import json
-
-import time
-
-import os
-
-# ── Paramètres Ubidots ────────────────────────────────────────────────
-
-UBIDOTS_TOKEN = "BBUS-vFMys8yflUN2qQUBLphNia3F5gmB89"
-
-DEVICE_LABEL  = "esp32_Device"
-
-MQTT_BROKER   = "industrial.api.ubidots.com"
-
-MQTT_PORT     = 1883
-
-TOPIC_SUB     = f"/v1.6/devices/{DEVICE_LABEL}/switch/lv"
-
-# ── GPIO via sysfs (pas de bibliothèque RPi.GPIO) ─────────────────────
-
-GPIO_PIN = 3   # BCM GPIO 3
-
-GPIO_PATH = f"/sys/class/gpio/gpio{GPIO_PIN}"
-
-def gpio_export(pin):
-
-    """Active le pin dans le système de fichiers sysfs."""
-
-    if not os.path.exists(f"/sys/class/gpio/gpio{pin}"):
-
-        with open("/sys/class/gpio/export", "w") as f:
-
-            f.write(str(pin))
-
-        time.sleep(0.1)  # Attente nécessaire après export
-
-def gpio_set_direction(pin, direction="out"):
-
-    """Définit la direction du pin : 'out' ou 'in'."""
-
-    with open(f"/sys/class/gpio/gpio{pin}/direction", "w") as f:
-
-        f.write(direction)
-
-def gpio_write(pin, value):
-
-    """Écrit 0 (LOW) ou 1 (HIGH) sur le pin."""
-
-    with open(f"/sys/class/gpio/gpio{pin}/value", "w") as f:
-
-        f.write(str(value))
-
-def gpio_unexport(pin):
-
-    """Libère le pin à la fin du programme."""
-
-    with open("/sys/class/gpio/unexport", "w") as f:
-
-        f.write(str(pin))
-
-# ── Initialisation du GPIO ────────────────────────────────────────────
-
-gpio_export(GPIO_PIN)
-
-gpio_set_direction(GPIO_PIN, "out")
-
-gpio_write(GPIO_PIN, 0)   # Ventilateur éteint au démarrage
-
-print(f"[GPIO] Pin {GPIO_PIN} initialisé en sortie (via sysfs)")
-
-# ── Callback MQTT : à chaque message reçu ────────────────────────────
-
-def on_message(client, userdata, message):
-
-    payload_str = message.payload.decode("utf-8")
-
-    print(f"[MQTT] Topic  : {message.topic}")
-
-    print(f"[MQTT] Payload: {payload_str}")
-
-    try:
-
-        # Ubidots renvoie un JSON : {"value": 1.0, "timestamp": ...}
-
-        data  = json.loads(payload_str)
-
-        value = int(data.get("value", 0))
-
-    except (json.JSONDecodeError, ValueError):
-
-        # Parfois la valeur brute est juste "1" ou "0"
-
-        value = int(float(payload_str.strip()))
-
-    if value == 1:
-
-        gpio_write(GPIO_PIN, 1)
-
-        print(">>> Ventilateur : ALLUMÉ (ON)  — GPIO 3 = HIGH ✓")
-
-    else:
-
-        gpio_write(GPIO_PIN, 0)
-
-        print(">>> Ventilateur : ÉTEINT (OFF) — GPIO 3 = LOW  ✓")
-
-def on_connect(client, userdata, flags, rc):
-
-    if rc == 0:
-
-        print(f"[MQTT] Connecté au broker Ubidots")
-
-        client.subscribe(TOPIC_SUB)
-
-        print(f"[MQTT] Abonné au topic : {TOPIC_SUB}")
-
-    else:
-
-        print(f"[MQTT] Échec de connexion, code : {rc}")
-
-# ── Configuration et démarrage du client MQTT ─────────────────────────
-
-client = mqtt.Client(client_id="RaspberryPi_IoT")
-
-client.username_pw_set(UBIDOTS_TOKEN, password="")   # Token = username
-
-client.on_connect = on_connect
-
-client.on_message = on_message
-
-print(f"[MQTT] Connexion à {MQTT_BROKER}:{MQTT_PORT} ...")
-
-client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-
-try:
-
-    client.loop_forever()   # Bloque et traite les messages indéfiniment
-
-except KeyboardInterrupt:
-
-    print("\n[ARRÊT] Interruption clavier — libération des ressources")
-
-    gpio_write(GPIO_PIN, 0)    # Éteindre le ventilateur
-
-    gpio_unexport(GPIO_PIN)    # Libérer le pin
-
-    client.disconnect()
-
-    print("[GPIO] Pin libéré. Programme terminé.")
