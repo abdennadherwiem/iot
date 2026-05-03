@@ -1,0 +1,44 @@
+
+
+import paho.mqtt.client as mqtt
+from gpiozero import LED
+import time
+
+try:
+    relay = LED(3)
+    gpio_ok = True
+except:
+    print("GPIO non disponible → mode simulation")
+    gpio_ok = False
+
+TOKEN = "BBUS-WgZdnU7aVVKvrDr0Et9EdpjrVvzMn8"
+DEVICE_LABEL = "esp32_device"
+
+BROKER = "industrial.api.ubidots.com"
+PORT = 1883
+
+TOPIC = f"/v1.6/devices/{DEVICE_LABEL}/switch/lv"
+
+def on_message(client, userdata, msg):
+    value = msg.payload.decode("utf-8")
+    print("Valeur reçue :", value)
+
+    if value == "1.0":
+        print("Ventilateur ON")
+        if gpio_ok:
+            relay.on()
+    else:
+        print("Ventilateur OFF")
+        if gpio_ok:
+            relay.off()
+
+client = mqtt.Client()
+client.username_pw_set(TOKEN, "")
+
+client.on_message = on_message
+client.connect(BROKER, PORT, 60)
+client.subscribe(TOPIC)
+
+print("En attente...")
+
+client.loop_forever()
